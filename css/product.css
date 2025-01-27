@@ -287,6 +287,7 @@ textarea {
 }
 
 .save-btn {
+    width: 80px;
     padding: 8px 15px;
     border: none;
     border-radius: 10px;
@@ -395,7 +396,6 @@ textarea {
     }
         .modal-content {
             position: fixed;
-            top: 0;
             left: 0;
             width: 70%;
             height: 90%;
@@ -559,3 +559,13 @@ textarea {
     margin-top: 10px;
 }
 
+#removeImage {
+    display:none; 
+    color: red; 
+    cursor: pointer; 
+    font-weight: bold; 
+    font-size: 24px;
+    top: -60px;
+    position: relative;
+    float: right;
+}

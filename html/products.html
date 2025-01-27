@@ -202,7 +202,11 @@
                         </div>
                         <div>
                             <label for="productImage">Product Image</label>
-                            <input type="file" id="productImage" name="productImage" accept="image/*"> <br>
+                            <input type="file" id="productImage" name="productImage" accept="image/*" onchange="previewImage()">
+                            <div>
+                                <img id="imagePreview" style="display:none; width: 90%; margin-top: 10px; height: 50px;" />
+                                <span id="removeImage" onclick="removeImage()">&times;</span>
+                            </div>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: center;">

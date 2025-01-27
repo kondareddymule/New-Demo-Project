@@ -513,11 +513,57 @@ window.onclick = function(event) {
 
 // Function to clear the form
 function clearForm() {
+    // Reset the form fields
     document.getElementById("addProductForm").reset();
     document.getElementById("productId").value = "";
     document.getElementById("createdDateTime").value = "";
     document.getElementById("modifiedDateTime").value = "";
+    
+    // Clear the image preview and hide the remove button
+    const imagePreview = document.getElementById("imagePreview");
+    const removeImageButton = document.getElementById("removeImage");
+    const productImageInput = document.getElementById("productImage");
+
+    // Reset the file input and hide the image preview
+    productImageInput.value = "";  // Clears the file input
+    imagePreview.style.display = "none";  // Hides the image preview
+    removeImageButton.style.display = "none";  // Hides the remove button
 }
+
+
+function previewImage() {
+    const file = document.getElementById("productImage").files[0];
+    const imagePreview = document.getElementById("imagePreview");
+    const removeImageButton = document.getElementById("removeImage");
+
+    if (file) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            imagePreview.src = e.target.result; // Set the source of the image preview
+            imagePreview.style.display = "block"; // Show the image
+            removeImageButton.style.display = "inline"; // Show the remove button
+        };
+        
+        reader.readAsDataURL(file); // Read the file as a data URL
+    } else {
+        imagePreview.style.display = "none"; // Hide the preview if no file is selected
+        removeImageButton.style.display = "none"; // Hide the remove button
+    }
+}
+
+function removeImage() {
+    const imagePreview = document.getElementById("imagePreview");
+    const removeImageButton = document.getElementById("removeImage");
+    const productImageInput = document.getElementById("productImage");
+
+    // Clear the file input and hide the preview
+    productImageInput.value = "";
+    imagePreview.style.display = "none";
+    removeImageButton.style.display = "none";
+}
+
+
 
 // Handle form submission
 document.getElementById("addProductForm").addEventListener("submit", function(event) {
@@ -541,6 +587,15 @@ document.getElementById("addProductForm").addEventListener("submit", function(ev
 
     if (isNaN(buyingPrice) || buyingPrice < 0) {
         alert('Please enter a valid positive price for Buying Price.');
+        return;
+    }
+
+    const createdDateTime = new Date(document.getElementById("createdDateTime").value);
+    const deliveredDate = new Date(document.getElementById("deliveredDate").value);
+
+    // Check if the delivery date is before the creation date
+    if (deliveredDate < createdDateTime) {
+        alert('Delivery Date cannot be before the Created Date Time.');
         return;
     }
 
@@ -619,10 +674,12 @@ document.getElementById("addProductForm").addEventListener("submit", function(ev
 // In Edit Mode with Prefilled data
 
 document.addEventListener("DOMContentLoaded", function() {
+
+    // Function to open the edit modal and populate form fields
     function openEditModal(productId) {
         let product1 = JSON.parse(localStorage.getItem('Products'));
         let product = product1.find(product => product.Id === productId);
-    
+
         if (product) {
             // Check if the product status is "Delivered"
             if (product.Status === "Delivered") {
@@ -630,8 +687,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 document.getElementById("editProductModal").style.display = "none"; // Close the modal
                 return;
             }
-    
-            // Populate the form fields if the status is not "Delivered"
+
+            // Populate form fields with existing product data
             document.getElementById("editProductId").value = product.Id;
             document.getElementById("editProductName").value = product.Name;
             document.getElementById("editProductTitle").value = product.Title;
@@ -647,12 +704,12 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("editCreatedDateTime").value = product['Created Date Time'];
             document.getElementById("editModifiedDateTime").value = product['Modified Date Time'];
             document.getElementById("editDeliveredDate").value = product['Delivery Date'];
-    
+
             // Display the existing image if it exists
             const imageUrl = product.Image;
             const imageElement = document.getElementById("editProductImagePreview");
             const deleteImageLink = document.getElementById("deleteImageLink");
-    
+
             if (imageUrl) {
                 imageElement.style.display = "block"; // Show the image preview
                 imageElement.src = imageUrl; // Set the existing image URL
@@ -661,7 +718,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 imageElement.style.display = "none"; // Hide the image preview if no image
                 deleteImageLink.style.display = "none"; // Hide the delete link if no image
             }
-    
+
             // Open the modal
             document.getElementById("editProductModal").style.display = "block";
         }
@@ -677,6 +734,28 @@ document.addEventListener("DOMContentLoaded", function() {
         imageElement.style.display = "none";
         deleteImageLink.style.display = "none";
         document.getElementById("editProductImage").value = ''; // Clear the file input
+    });
+
+    // Handle the file input change (new functionality for previewing selected image)
+    document.getElementById("editProductImage").addEventListener("change", function(event) {
+        const imageElement = document.getElementById("editProductImagePreview");
+        const deleteImageLink = document.getElementById("deleteImageLink");
+
+        // Remove the existing image and hide the delete link
+        imageElement.style.display = "none";
+        deleteImageLink.style.display = "none";
+
+        const file = event.target.files[0]; // Get the selected file
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Preview the selected image
+                imageElement.src = e.target.result;
+                imageElement.style.display = "block"; // Show the image preview
+                deleteImageLink.style.display = "block"; // Show the delete link
+            };
+            reader.readAsDataURL(file);
+        }
     });
 
     // Function to clear the edit form
@@ -723,25 +802,38 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
+        const createdDateTime = new Date(document.getElementById("editCreatedDateTime").value);
+        const deliveredDate = document.getElementById("editDeliveredDate").value ? new Date(document.getElementById("editDeliveredDate").value) : null;
+
+        // Validate Delivery Date
+        if (deliveredDate && deliveredDate < createdDateTime) {
+            alert('The delivery date cannot be before the creation date.');
+            return;
+        }
+
         // Handle the file input for the product image
         const productImage = document.getElementById("editProductImage").files[0];
         let productImageUrl = products[productIndex].Image; // Default to existing image
 
-        // If no new image is uploaded, use the default image
-        if (!productImage) {
-            productImageUrl = 'https://cdn.pixabay.com/photo/2022/10/18/17/00/night-7530755_960_720.jpg'; // Default image URL
-        } else {
-            // If a new image is uploaded, read the file
+        // If a new image is uploaded, read the file
+        if (productImage) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                productImageUrl = e.target.result;
+                productImageUrl = e.target.result; // Update the product image with the newly selected one
                 saveProduct(productImageUrl); // Save the product after the image is loaded
             };
             reader.readAsDataURL(productImage);
             return; // Return early to wait for the image to be read
         }
 
-        // Save the product immediately with the default image (or uploaded image if provided)
+        // If no new image is uploaded, we check if the image was deleted
+        const imageElement = document.getElementById("editProductImagePreview");
+        if (imageElement.style.display === "none") {
+            // If image is deleted, set it to the default image
+            productImageUrl = 'https://cdn.pixabay.com/photo/2022/10/18/17/00/night-7530755_960_720.jpg'; // Default image URL
+        }
+
+        // Save the product with the appropriate image URL (default or new)
         saveProduct(productImageUrl);
 
         function saveProduct(imageUrl) {
@@ -762,7 +854,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     "Created Date Time": document.getElementById("editCreatedDateTime").value,
                     "Modified Date Time": new Date().toLocaleString(), // Update to current date and time upon submission
                     "Delivery Date": document.getElementById("editDeliveredDate").value,
-                    Image: imageUrl // Updated image or default image
+                    Image: imageUrl // Keep the existing or updated image
                 };
 
                 products[productIndex] = updatedProduct;
@@ -776,7 +868,10 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     window.openEditModal = openEditModal;
+
 });
+
+
 
 
 
@@ -802,7 +897,7 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("viewBuyingPrice").value = product['Buying Price'];
             document.getElementById("viewAvailableQuantity").value = product['Available Quantity'];
             document.getElementById("viewCreatedDateTime").value = product['Created Date Time'];
-            document.getElementById("viewModifiedDateTime").value = new Date().toLocaleString();
+            document.getElementById("viewModifiedDateTime").value = product['Modified Date Time']
         
             // Format the delivery date and time
             const deliveredDate = new Date(product['Delivery Date']);
@@ -861,23 +956,21 @@ document.addEventListener("DOMContentLoaded", function() {
     window.openViewModal = openViewModal;
 });
 
-// window.addEventListener('storage', function(event) { 
-//     if (event.key === 'Products') { 
-//         location.reload();  
-//     } 
-// });
 
 
 
+// function setMinDateTime() {
+//     const now = new Date();
+//     // Set the 'min' attribute for the input
+//     document.getElementById('deliveredDate').min = now.toISOString().slice(0, 16);
+//   }
 
+//   // Call the function to disable previous dates and times
+//   setMinDateTime();
 
+//   function setDate() {
+//     const now = new Date()
+//     document.getElementById('editDeliveredDate').min = now.toISOString().slice(0, 16);
+//   }
 
-// Close modal when clicking outside the modal content
-window.onclick = function(event) {
-    if (event.target === deleteConfirmationModal) {
-        deleteConfirmationModal.style.display = 'none';
-        productToDelete = null;
-    }
-};
-
-  
+//   setDate()
